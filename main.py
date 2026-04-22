@@ -1,10 +1,13 @@
 import datetime
-import httpx
 import sqlite3
-from fastapi import FastAPI, Request, Form, Depends, HTTPException
+
+import httpx
+from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+
+from analytics import get_dashboard_data
 
 app = FastAPI()
 # Change this to a random, secure string for your VPS
@@ -252,6 +255,18 @@ async def cancel_ride(
     db.execute("DELETE FROM rides WHERE id = ?", (ride_id,))
     db.commit()
     return HTMLResponse("<script>window.location.reload()</script>")
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request, auth=Depends(check_auth)):
+    # We pass the db path to our analytics module
+    chart_json, stats = get_dashboard_data("bike_rides.db")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={"request": request, "chart_json": chart_json, "stats": stats},
+    )
 
 
 if __name__ == "__main__":

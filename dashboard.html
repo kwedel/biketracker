@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ride Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body class="container">
+    <nav>
+        <ul>
+            <li><strong>🚲 BikeData</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/" class="secondary">Tracker</a></li>
+            <li><a href="/dashboard" class="contrast">Dashboard</a></li>
+        </ul>
+    </nav>
+
+    {% if stats %}
+    <div class="grid">
+        <article>
+            <small>Total Trips</small>
+            <h2 style="color: var(--primary);">{{ stats.total_trips }}</h2>
+        </article>
+        <article>
+            <small>Rainy Rides</small>
+            <h2 style="color: #e74c3c;">{{ stats.rainy_trips }}</h2>
+        </article>
+        <article>
+            <small>Avg Time</small>
+            <h2>{{ stats.avg_duration }} <small>min</small></h2>
+        </article>
+    </div>
+
+    <article>
+        <header>Travel Time vs. Temperature</header>
+        <div id="vis" style="width: 100%;"></div>
+    </article>
+
+    <script type="text/javascript">
+        var spec = {{ chart_json | safe }};
+        vegaEmbed('#vis', spec, {actions: false});
+    </script>
+    {% else %}
+    <article>Not enough data to generate insights yet.</article>
+    {% endif %}
+</body>
+</html>
