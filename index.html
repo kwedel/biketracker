@@ -69,41 +69,61 @@
     </div>
 
     <hr>
-    <h4>Recent Rides</h4>
+    <h4>Recent Rides
+    </h4>
     <div class="overflow-auto">
-        <table role="grid" style="font-size: 0.85rem;">
-            <thead>
-                <tr>
-                    <th>Route</th>
-                    <th>Time</th>
-                    <th>Weather & Rain</th>
-                    <th>Wind</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ride in rides %}
-                <tr>
-                    <td>
-                        <strong>{{ ride.route }}</strong> 
-                        {% if ride.extra_dist %}(Alt){% endif %}<br>
-                        <span class="data-small">{{ ride.direction }}</span>
-                    </td>
-                    <td>
-                        {{ ride.start_time }}<br>
-                        <span class="data-small">{{ ride.end_time }}</span>
-                    </td>
-                    <td>
-                        {{ ride.temp }}°C ({{ ride.symbol }})<br>
-                        <span class="data-small">Exp. Rain: {{ ride.precip_next_hour }} mm</span>
-                    </td>
-                    <td>
-                        {{ ride.wind_speed }} m/s (Gust: {{ ride.wind_gust }})<br>
-                        <span class="data-small">Dir: {{ ride.wind_dir }}°</span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+      <table role="grid" style="font-size: 0.85rem;">
+    <thead>
+        <tr>
+          <th>Route
+	  </th>
+          <th>Times
+	  </th>
+          <th>Duration
+	  </th>
+	  <th>Weather
+	  </th>
+          <th>Wind
+	  </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ride in rides %}
+        <tr>
+            <td>
+              <strong>{{ ride.route }}
+	      </strong>
+	      <br>
+              <span class="data-small">{{ ride.direction }}
+	      </span>
+            </td>
+            <td>
+              <span class="data-small">S: {{ ride.start_time }}
+	      </span>
+	      <br>
+              <span class="data-small">E: {{ ride.end_time }}
+	      </span>
+            </td>
+            <td>
+              <strong>{{ ride.duration }}
+	      </strong>
+            </td>
+            <td>
+              {{ ride.temp }}°C
+	      <br>
+              <span class="data-small">Rain: {{ ride.precip_next_hour }}mm
+	      </span>
+            </td>
+            <td>
+              {{ ride.wind_speed }}m/s
+	      <br>
+              <span class="data-small">{{ ride.wind_dir }}°
+	      </span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
     </div>
 
     <script>

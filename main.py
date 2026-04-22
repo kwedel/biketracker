@@ -140,9 +140,47 @@ async def index(
     request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
 ):
     active = db.execute("SELECT * FROM rides WHERE end_time IS NULL LIMIT 1").fetchone()
-    history = db.execute(
+
+    # Get completed rides
+    cursor = db.execute(
         "SELECT * FROM rides WHERE end_time IS NOT NULL ORDER BY id DESC LIMIT 15"
-    ).fetchall()
+    )
+    history_rows = cursor.fetchall()
+
+    history = []
+    fmt = "%H:%M:%S"
+
+    for row in history_rows:
+        # Convert sqlite3.Row to a standard dictionary
+        ride = dict(row)
+
+        start_str = ride.get("start_time")
+        end_str = ride.get("end_time")
+
+        if start_str and end_str:
+            try:
+                # Convert strings to datetime objects
+                t1 = datetime.datetime.strptime(start_str, fmt)
+                t2 = datetime.datetime.strptime(end_str, fmt)
+
+                # Calculate duration
+                duration = t2 - t1
+
+                # Format duration string (HH:MM:SS)
+                # We use // 3600 etc to handle potential day rollovers
+                total_secs = int(duration.total_seconds())
+                if total_secs < 0:  # Handle ride across midnight
+                    total_secs += 86400
+
+                hours, rem = divmod(total_secs, 3600)
+                mins, secs = divmod(rem, 60)
+                ride["duration"] = f"{hours:02}:{mins:02}:{secs:02}"
+            except ValueError:
+                ride["duration"] = "Error"
+        else:
+            ride["duration"] = "Incomplete"
+
+        history.append(ride)
 
     return templates.TemplateResponse(
         request=request,
@@ -150,7 +188,7 @@ async def index(
         context={
             "request": request,
             "active_ride": active,
-            "rides": history,
+            "rides": history,  # Passing the list of dictionaries
             "login_mode": False,
         },
     )
