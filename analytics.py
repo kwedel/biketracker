@@ -33,6 +33,7 @@ def get_dashboard_data(db_path):
     )
 
     # 3. Create Altair Chart
+    alt.themes.enable("carbong90")
     chart = (
         alt.Chart(df)
         .mark_circle(size=80)
