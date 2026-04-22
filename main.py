@@ -1,0 +1,222 @@
+import datetime
+import httpx
+import sqlite3
+from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+
+app = FastAPI()
+# Change this to a random, secure string for your VPS
+app.add_middleware(SessionMiddleware, secret_key="super-secret-bike-key-2026")
+templates = Jinja2Templates(directory=".")
+
+# --- Config ---
+USER_PASSWORD = "yourpassword"  # The password to unlock the app on your phone
+LAT, LON = 55.73, 12.44  # Example: Herlev, Denmark
+CONTACT_EMAIL = "your@email.com"
+
+
+# --- Database Setup ---
+def get_db():
+    # Add check_same_thread=False here
+    conn = sqlite3.connect("bike_rides.db", check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def init_db():
+    with sqlite3.connect("bike_rides.db") as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rides (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                route TEXT, direction TEXT, extra_dist INTEGER,
+                start_time TEXT, end_time TEXT,
+                temp REAL, precip_instant REAL, precip_next_hour REAL, 
+                humidity REAL, wind_dir REAL, wind_speed REAL, wind_gust REAL,
+                symbol TEXT, sunrise TEXT, sunset TEXT
+            )
+        """
+        )
+
+
+init_db()
+
+
+# --- Auth Dependency ---
+async def check_auth(request: Request):
+    if not request.session.get("logged_in"):
+        raise HTTPException(
+            status_code=307, detail="Auth required", headers={"Location": "/login"}
+        )
+    return True
+
+
+# --- API Fetcher (MET Norway) ---
+async def get_departure_data():
+    headers = {"User-Agent": f"BikePredictorApp/1.0 ({CONTACT_EMAIL})"}
+    today = datetime.date.today().isoformat()
+
+    nowcast_url = (
+        f"https://api.met.no/weatherapi/nowcast/2.0/complete?lat={LAT}&lon={LON}"
+    )
+    sun_url = f"https://api.met.no/weatherapi/sunrise/3.0/sun?lat={LAT}&lon={LON}&date={today}"
+
+    data = {
+        "temp": None,
+        "precip_instant": None,
+        "precip_next_hour": None,
+        "hum": None,
+        "w_dir": None,
+        "w_spd": None,
+        "w_gst": None,
+        "symbol": "unknown",
+        "sunrise": "N/A",
+        "sunset": "N/A",
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # 1. Fetch Nowcast
+            n_res = await client.get(nowcast_url, headers=headers)
+            if n_res.status_code == 200:
+                n_json = n_res.json()["properties"]["timeseries"][0]["data"]
+                instant = n_json.get("instant", {}).get("details", {})
+                next_hour = n_json.get("next_1_hours", {}).get("details", {})
+                summary = n_json.get("next_1_hours", {}).get("summary", {})
+
+                data.update(
+                    {
+                        "temp": instant.get("air_temperature"),
+                        "precip_instant": instant.get("precipitation_rate"),
+                        "precip_next_hour": next_hour.get("precipitation_amount"),
+                        "hum": instant.get("relative_humidity"),
+                        "w_dir": instant.get("wind_from_direction"),
+                        "w_spd": instant.get("wind_speed"),
+                        "w_gst": instant.get("wind_speed_of_gust"),
+                        "symbol": summary.get("symbol_code", "unknown"),
+                    }
+                )
+
+            # 2. Fetch Sunrise/Sunset
+            s_res = await client.get(sun_url, headers=headers)
+            if s_res.status_code == 200:
+                s_props = s_res.json()["properties"]
+                data["sunrise"] = s_props["sunrise"]["time"].split("T")[1][:5]
+                data["sunset"] = s_props["sunset"]["time"].split("T")[1][:5]
+
+        except Exception as e:
+            print(f"Error fetching MET data: {e}")
+
+    return data
+
+
+# --- Routes ---
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_get(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"request": request, "login_mode": True},
+    )
+
+
+@app.post("/login")
+async def login_post(request: Request, password: str = Form(...)):
+    if password == USER_PASSWORD:
+        request.session["logged_in"] = True
+        return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(
+    request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
+):
+    active = db.execute("SELECT * FROM rides WHERE end_time IS NULL LIMIT 1").fetchone()
+    history = db.execute(
+        "SELECT * FROM rides WHERE end_time IS NOT NULL ORDER BY id DESC LIMIT 15"
+    ).fetchall()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "request": request,
+            "active_ride": active,
+            "rides": history,
+            "login_mode": False,
+        },
+    )
+
+
+@app.post("/start")
+async def start_ride(
+    route: str = Form(...),
+    direction: str = Form(...),
+    extra_dist: bool = Form(False),
+    db: sqlite3.Connection = Depends(get_db),
+    auth=Depends(check_auth),
+):
+    now = datetime.datetime.now().strftime("%H:%M:%S")
+    w = await get_departure_data()
+
+    db.execute(
+        """
+        INSERT INTO rides (
+            route, direction, extra_dist, start_time, 
+            temp, precip_instant, precip_next_hour, humidity, 
+            wind_dir, wind_speed, wind_gust, symbol, sunrise, sunset
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """,
+        (
+            route,
+            direction,
+            1 if extra_dist else 0,
+            now,
+            w["temp"],
+            w["precip_instant"],
+            w["precip_next_hour"],
+            w["hum"],
+            w["w_dir"],
+            w["w_spd"],
+            w["w_gst"],
+            w["symbol"],
+            w["sunrise"],
+            w["sunset"],
+        ),
+    )
+    db.commit()
+
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.post("/stop/{ride_id}")
+async def stop_ride(
+    ride_id: int, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
+):
+    end_time = datetime.datetime.now().strftime("%H:%M:%S")
+    db.execute("UPDATE rides SET end_time = ? WHERE id = ?", (end_time, ride_id))
+    db.commit()
+    return HTMLResponse("<script>window.location.reload()</script>")
+
+
+@app.post("/cancel/{ride_id}")
+async def cancel_ride(
+    ride_id: int, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
+):
+    db.execute("DELETE FROM rides WHERE id = ?", (ride_id,))
+    db.commit()
+    return HTMLResponse("<script>window.location.reload()</script>")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

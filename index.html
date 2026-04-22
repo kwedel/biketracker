@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bike Tracker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .data-small { font-size: 0.8rem; color: var(--muted-color); }
+    </style>
+</head>
+<body class="container">
+    <nav><ul><li><strong>🚲 Commute Tracker</strong></li></ul></nav>
+
+    {% if login_mode %}
+    <article style="max-width: 400px; margin: 40px auto;">
+        <header>Authentication Required</header>
+        <form action="/login" method="post">
+            <input type="password" name="password" placeholder="Enter Password" required autofocus>
+            <button type="submit">Unlock Tracker</button>
+        </form>
+    </article>
+    
+    {% else %}
+    <div id="ui-root">
+        {% if active_ride %}
+        <article style="border: 2px solid #2ecc71;">
+            <header>Ride In Progress</header>
+            <div style="text-align: center;">
+                <h1 id="live-clock" style="font-family: monospace; font-size: 3rem; margin-bottom: 0;">00:00:00</h1>
+                <p>
+                    <strong>{{ active_ride.route }}</strong> to <strong>{{ active_ride.direction }}</strong><br>
+                    Started: {{ active_ride.start_time }}
+                </p>
+            </div>
+            <div class="grid">
+                <button hx-post="/stop/{{ active_ride.id }}" class="secondary">Stop & Save</button>
+                <button hx-post="/cancel/{{ active_ride.id }}" hx-confirm="Are you sure you want to delete this ride?" class="outline contrast">Cancel Ride</button>
+            </div>
+        </article>
+        
+        {% else %}
+        <article>
+            <header>New Ride</header>
+            <form hx-post="/start" hx-target="body">
+                <div class="grid">
+                    <label>Route
+                        <select name="route">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                        </select>
+                    </label>
+                    <label>Direction
+                        <select name="direction">
+                            <option value="work">To Work</option>
+                            <option value="home">Home</option>
+                        </select>
+                    </label>
+                </div>
+                <label>
+                    <input type="checkbox" name="extra_dist"> Alternate Start (+ Extra Distance)
+                </label>
+                <button type="submit">Start Ride</button>
+            </form>
+        </article>
+        {% endif %}
+    </div>
+
+    <hr>
+    <h4>Recent Rides</h4>
+    <div class="overflow-auto">
+        <table role="grid" style="font-size: 0.85rem;">
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th>Time</th>
+                    <th>Weather & Rain</th>
+                    <th>Wind</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ride in rides %}
+                <tr>
+                    <td>
+                        <strong>{{ ride.route }}</strong> 
+                        {% if ride.extra_dist %}(Alt){% endif %}<br>
+                        <span class="data-small">{{ ride.direction }}</span>
+                    </td>
+                    <td>
+                        {{ ride.start_time }}<br>
+                        <span class="data-small">{{ ride.end_time }}</span>
+                    </td>
+                    <td>
+                        {{ ride.temp }}°C ({{ ride.symbol }})<br>
+                        <span class="data-small">Exp. Rain: {{ ride.precip_next_hour }} mm</span>
+                    </td>
+                    <td>
+                        {{ ride.wind_speed }} m/s (Gust: {{ ride.wind_gust }})<br>
+                        <span class="data-small">Dir: {{ ride.wind_dir }}°</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function updateClock() {
+            const clock = document.getElementById('live-clock');
+            if (!clock) return; // Exit if no active ride
+            
+            const startStr = "{{ active_ride.start_time if active_ride else '' }}";
+            if (!startStr) return;
+            
+            const [h, m, s] = startStr.split(':').map(Number);
+            const startDate = new Date(); 
+            startDate.setHours(h, m, s, 0);
+            
+            setInterval(() => {
+                const diffMs = new Date() - startDate;
+                const diff = new Date(diffMs < 0 ? diffMs + 86400000 : diffMs); // Handle past midnight
+                
+                const hours = String(Math.floor(diffMs / 3600000)).padStart(2, '0');
+                const mins = String(diff.getUTCMinutes()).padStart(2, '0');
+                const secs = String(diff.getUTCSeconds()).padStart(2, '0');
+        	const hundredths = String(Math.floor((diffMs % 1000) / 10)).padStart(2, '0');
+                
+                clock.innerText = `${hours}:${mins}:${secs}:${hundredths}`;
+            }, 10);
+        }
+        updateClock();
+    </script>
+    {% endif %}
+</body>
+</html>
