@@ -142,8 +142,20 @@ async def login_post(request: Request, password: str = Form(...)):
 async def index(
     request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
 ):
+    # We ONLY look for an active ride to show the start form or the timer
     active = db.execute("SELECT * FROM rides WHERE end_time IS NULL LIMIT 1").fetchone()
 
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"request": request, "active_ride": active, "login_mode": False},
+    )
+
+
+@app.get("/history", response_class=HTMLResponse)
+async def get_history(
+    request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
+):
     # Get completed rides
     cursor = db.execute(
         "SELECT * FROM rides WHERE end_time IS NOT NULL ORDER BY id DESC LIMIT 15"
@@ -187,13 +199,8 @@ async def index(
 
     return templates.TemplateResponse(
         request=request,
-        name="index.html",
-        context={
-            "request": request,
-            "active_ride": active,
-            "rides": history,  # Passing the list of dictionaries
-            "login_mode": False,
-        },
+        name="history_snippet.html",
+        context={"rides": history},
     )
 
 
