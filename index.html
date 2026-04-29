@@ -53,17 +53,17 @@
             <header>New Ride</header>
             <form hx-post="/start" hx-target="body">
                 <div class="grid">
+                    <label>Direction
+                        <select name="direction">
+                            <option value="work">To Work</option>
+                            <option value="home">Home</option>
+                        </select>
+                    </label>
                     <label>Route
                         <select name="route">
                             <option value="A">A</option>
                             <option value="B">B</option>
                             <option value="C">C</option>
-                        </select>
-                    </label>
-                    <label>Direction
-                        <select name="direction">
-                            <option value="work">To Work</option>
-                            <option value="home">Home</option>
                         </select>
                     </label>
                 </div>
