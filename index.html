@@ -91,18 +91,15 @@
             const startStr = "{{ active_ride.start_time if active_ride else '' }}";
             if (!startStr) return;
             
-            const [h, m, s] = startStr.split(':').map(Number);
-            const startDate = new Date(); 
-            startDate.setHours(h, m, s, 0);
+            const startDate = new Date(startStr); 
             
             setInterval(() => {
                 const diffMs = new Date() - startDate;
-                const diff = new Date(diffMs < 0 ? diffMs + 86400000 : diffMs); // Handle past midnight
                 
                 const hours = String(Math.floor(diffMs / 3600000)).padStart(2, '0');
-                const mins = String(diff.getUTCMinutes()).padStart(2, '0');
-                const secs = String(diff.getUTCSeconds()).padStart(2, '0');
-        	const hundredths = String(Math.floor((diffMs % 1000) / 10)).padStart(2, '0');
+		const mins = String(Math.floor(diffMs / 60000) % 60).padStart(2, '0');
+		const secs = String(Math.floor(diffMs / 1000) % 60).padStart(2, '0');
+		const hundredths = String(Math.floor((diffMs % 1000) / 10)).padStart(2, '0');
                 
                 clock.innerText = `${hours}:${mins}:${secs}:${hundredths}`;
             }, 10);

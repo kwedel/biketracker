@@ -17,9 +17,8 @@ def get_dashboard_data(db_path):
     # 2. Calculate Duration in Minutes
     # We convert strings to time objects and calculate delta
     def parse_duration(s, e):
-        fmt = "%H:%M:%S"
-        start = datetime.datetime.strptime(s, fmt)
-        end = datetime.datetime.strptime(e, fmt)
+        start = datetime.datetime.fromisoformat(s)
+        end = datetime.datetime.fromisoformat(e)
         diff = end - start
         return diff.total_seconds() / 60
 

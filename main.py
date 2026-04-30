@@ -1,5 +1,6 @@
 import datetime
 import sqlite3
+from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
@@ -16,8 +17,9 @@ templates = Jinja2Templates(directory=".")
 
 # --- Config ---
 USER_PASSWORD = "yourpassword"  # The password to unlock the app on your phone
-LAT, LON = 55.73, 12.44  # Example: Herlev, Denmark
+LAT, LON = 55.71, 12.50  # Example: Herlev, Denmark
 CONTACT_EMAIL = "your@email.com"
+TIMEZONE = ZoneInfo("Europe/Copenhagen")
 
 
 # --- Database Setup ---
@@ -62,7 +64,7 @@ async def check_auth(request: Request):
 # --- API Fetcher (MET Norway) ---
 async def get_departure_data():
     headers = {"User-Agent": f"BikePredictorApp/1.0 ({CONTACT_EMAIL})"}
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(TIMEZONE).date().isoformat()
 
     nowcast_url = (
         f"https://api.met.no/weatherapi/nowcast/2.0/complete?lat={LAT}&lon={LON}"
@@ -163,7 +165,7 @@ async def get_history(
     history_rows = cursor.fetchall()
 
     history = []
-    fmt = "%H:%M:%S"
+    fmt = "%Y-%m-%d %H:%M:%S"
 
     for row in history_rows:
         # Convert sqlite3.Row to a standard dictionary
@@ -174,22 +176,17 @@ async def get_history(
 
         if start_str and end_str:
             try:
-                # Convert strings to datetime objects
-                t1 = datetime.datetime.strptime(start_str, fmt)
-                t2 = datetime.datetime.strptime(end_str, fmt)
+                t1 = datetime.datetime.fromisoformat(start_str)
+                t2 = datetime.datetime.fromisoformat(end_str)
 
-                # Calculate duration
                 duration = t2 - t1
-
-                # Format duration string (HH:MM:SS)
-                # We use // 3600 etc to handle potential day rollovers
                 total_secs = int(duration.total_seconds())
-                if total_secs < 0:  # Handle ride across midnight
-                    total_secs += 86400
 
                 hours, rem = divmod(total_secs, 3600)
                 mins, secs = divmod(rem, 60)
                 ride["duration"] = f"{hours:02}:{mins:02}:{secs:02}"
+                ride["start_str"] = t1.astimezone(TIMEZONE).strftime(fmt)
+                ride["end_str"] = t2.astimezone(TIMEZONE).strftime(fmt)
             except ValueError:
                 ride["duration"] = "Error"
         else:
@@ -212,7 +209,7 @@ async def start_ride(
     db: sqlite3.Connection = Depends(get_db),
     auth=Depends(check_auth),
 ):
-    now = datetime.datetime.now().strftime("%H:%M:%S")
+    now = datetime.datetime.now(datetime.UTC).isoformat()
     w = await get_departure_data()
 
     db.execute(
@@ -249,7 +246,7 @@ async def start_ride(
 async def stop_ride(
     ride_id: int, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
 ):
-    end_time = datetime.datetime.now().strftime("%H:%M:%S")
+    end_time = datetime.datetime.now(datetime.UTC).isoformat()
     db.execute("UPDATE rides SET end_time = ? WHERE id = ?", (end_time, ride_id))
     db.commit()
     return HTMLResponse("<script>window.location.reload()</script>")
