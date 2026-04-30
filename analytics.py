@@ -40,7 +40,12 @@ def get_dashboard_data(db_path):
             x=alt.X("temp", title="Temperature (°C)"),
             y=alt.Y("duration_min", title="Duration (Minutes)"),
             color="direction",
-            tooltip=["route", "temp", "duration_min", "precip_next_hour"],
+            tooltip=[
+                "route",
+                "temp",
+                alt.Tooltip("duration_min", format=".1f", title="Minutter"),
+                "precip_next_hour",
+            ],
         )
         .interactive()
         .properties(width="container", height=400)
