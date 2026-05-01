@@ -10,16 +10,26 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from analytics import get_dashboard_data
 
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    USER_PASSWORD: str  # The password to unlock the app
+    session_key: str  # For signing cookies
+    LAT: float = 55.71  # Lattitude
+    LON: float = 12.50  # Longitude
+    CONTACT_EMAIL: str = "your@email.com"  # Email for the MET-API
+    TIMEZONE: str = "Europe/Copenhagen"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+
+settings = Settings()
+TIMEZONE = ZoneInfo(settings.TIMEZONE)
+
 app = FastAPI()
 # Change this to a random, secure string for your VPS
-app.add_middleware(SessionMiddleware, secret_key="super-secret-bike-key-2026")
+app.add_middleware(SessionMiddleware, secret_key=settings.session_key)
 templates = Jinja2Templates(directory=".")
-
-# --- Config ---
-USER_PASSWORD = "yourpassword"  # The password to unlock the app on your phone
-LAT, LON = 55.71, 12.50  # Example: Herlev, Denmark
-CONTACT_EMAIL = "your@email.com"
-TIMEZONE = ZoneInfo("Europe/Copenhagen")
 
 
 # --- Database Setup ---
@@ -63,13 +73,11 @@ async def check_auth(request: Request):
 
 # --- API Fetcher (MET Norway) ---
 async def get_departure_data():
-    headers = {"User-Agent": f"BikePredictorApp/1.0 ({CONTACT_EMAIL})"}
+    headers = {"User-Agent": f"BikePredictorApp/1.0 ({settings.CONTACT_EMAIL})"}
     today = datetime.datetime.now(TIMEZONE).date().isoformat()
 
-    nowcast_url = (
-        f"https://api.met.no/weatherapi/nowcast/2.0/complete?lat={LAT}&lon={LON}"
-    )
-    sun_url = f"https://api.met.no/weatherapi/sunrise/3.0/sun?lat={LAT}&lon={LON}&date={today}"
+    nowcast_url = f"https://api.met.no/weatherapi/nowcast/2.0/complete?lat={settings.LAT}&lon={settings.LON}"
+    sun_url = f"https://api.met.no/weatherapi/sunrise/3.0/sun?lat={settings.LAT}&lon={settings.LON}&date={today}"
 
     data = {
         "temp": None,
@@ -134,7 +142,7 @@ async def login_get(request: Request):
 
 @app.post("/login")
 async def login_post(request: Request, password: str = Form(...)):
-    if password == USER_PASSWORD:
+    if password == settings.USER_PASSWORD:
         request.session["logged_in"] = True
         return RedirectResponse(url="/", status_code=303)
     return RedirectResponse(url="/login", status_code=303)
