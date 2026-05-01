@@ -41,7 +41,7 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 route TEXT, direction TEXT, extra_dist INTEGER,
                 start_time TEXT, end_time TEXT,
-                temp REAL, precip_instant REAL, precip_next_hour REAL, 
+                temp REAL, precip_instant REAL, precip_next_hour REAL,
                 humidity REAL, wind_dir REAL, wind_speed REAL, wind_gust REAL,
                 symbol TEXT, sunrise TEXT, sunset TEXT
             )
@@ -215,8 +215,8 @@ async def start_ride(
     db.execute(
         """
         INSERT INTO rides (
-            route, direction, extra_dist, start_time, 
-            temp, precip_instant, precip_next_hour, humidity, 
+            route, direction, extra_dist, start_time,
+            temp, precip_instant, precip_next_hour, humidity,
             wind_dir, wind_speed, wind_gust, symbol, sunrise, sunset
         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """,
