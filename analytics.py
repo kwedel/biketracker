@@ -23,12 +23,13 @@ def get_dashboard_data(db_path):
         return diff.total_seconds() / 60
 
     df = df.with_columns(
+        pl.col("start_time").str.to_datetime("%Y-%m-%dT%H:%M:%S+00:00"),
         pl.struct(["start_time", "end_time"])
         .map_elements(
             lambda x: parse_duration(x["start_time"], x["end_time"]),
             return_dtype=pl.Float64,
         )
-        .alias("duration_min")
+        .alias("duration_min"),
     )
 
     # 3. Create Altair Chart
@@ -37,7 +38,7 @@ def get_dashboard_data(db_path):
         alt.Chart(df)
         .mark_circle(size=80)
         .encode(
-            x=alt.X("temp", title="Temperature (°C)"),
+            x=alt.X("start_time", title="Departure time"),
             y=alt.Y("duration_min", title="Duration (Minutes)"),
             color="direction",
             tooltip=[
@@ -55,7 +56,7 @@ def get_dashboard_data(db_path):
     stats = {
         "total_trips": df.height,
         "rainy_trips": df.filter(pl.col("precip_next_hour") > 0).height,
-        "avg_duration": round(df["duration_min"].mean(), 1),
+        "avg_duration": f'{round(df["duration_min"].mean(), 1)}±{round(df["duration_min"].std(), 1)}',
     }
 
     return chart.to_json(), stats
