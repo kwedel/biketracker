@@ -154,11 +154,25 @@ async def index(
 ):
     # We ONLY look for an active ride to show the start form or the timer
     active = db.execute("SELECT * FROM rides WHERE end_time IS NULL LIMIT 1").fetchone()
+    if active:
+        local_start_time = (
+            datetime.datetime.fromisoformat(active["start_time"])
+            .astimezone()
+            .time()
+            .isoformat("seconds")
+        )
+    else:
+        local_start_time = None
 
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"request": request, "active_ride": active, "login_mode": False},
+        context={
+            "request": request,
+            "active_ride": active,
+            "login_mode": False,
+            "local_start_time": local_start_time,
+        },
     )
 
 
