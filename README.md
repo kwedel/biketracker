@@ -6,7 +6,7 @@
 - [x] Harden server
 - [x] Get Caddy up and running
 - [ ] Deploy using systemd
-- [ ] Migrate manual data to db
+- [x] Migrate manual data to db
 - [ ] Create dummy predict button with random values
 - [ ] Create simple analytics with durations over time
 - [ ] Develop proper prediction model
