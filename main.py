@@ -157,7 +157,7 @@ async def index(
     if active:
         local_start_time = (
             datetime.datetime.fromisoformat(active["start_time"])
-            .astimezone()
+            .astimezone(TIMEZONE)
             .time()
             .isoformat("seconds")
         )
