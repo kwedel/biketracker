@@ -118,8 +118,8 @@ async def get_departure_data():
             s_res = await client.get(sun_url, headers=headers)
             if s_res.status_code == 200:
                 s_props = s_res.json()["properties"]
-                data["sunrise"] = s_props["sunrise"]["time"].split("T")[1][:5]
-                data["sunset"] = s_props["sunset"]["time"].split("T")[1][:5]
+                data["sunrise"] = s_props["sunrise"]["time"]
+                data["sunset"] = s_props["sunset"]["time"]
 
         except Exception as e:
             print(f"Error fetching MET data: {e}")
@@ -230,7 +230,7 @@ async def start_ride(
     db: sqlite3.Connection = Depends(get_db),
     auth=Depends(check_auth),
 ):
-    now = datetime.datetime.now(datetime.UTC).isoformat()
+    now = datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds")
     w = await get_departure_data()
 
     db.execute(
