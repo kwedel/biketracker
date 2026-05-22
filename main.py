@@ -176,6 +176,14 @@ async def index(
     )
 
 
+def get_wind_arrow(degrees):
+    if degrees is None:
+        return ""
+    arrows = ["↓", "↙", "←", "↖", "↑", "↗", "→", "↘"]
+    idx = int((degrees + 22.5) % 360 // 45)
+    return arrows[idx]
+
+
 @app.get("/history", response_class=HTMLResponse)
 async def get_history(
     request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
@@ -187,33 +195,34 @@ async def get_history(
     history_rows = cursor.fetchall()
 
     history = []
-    fmt = "%Y-%m-%d %H:%M:%S"
+    fmt = "%d/%m %H:%M"
 
     for row in history_rows:
         # Convert sqlite3.Row to a standard dictionary
         ride = dict(row)
 
-        start_str = ride.get("start_time")
-        end_str = ride.get("end_time")
+        start_time_raw = ride.get("start_time")
+        end_time_raw = ride.get("end_time")
 
-        if start_str and end_str:
+        if start_time_raw and end_time_raw:
             try:
-                t1 = datetime.datetime.fromisoformat(start_str)
-                t2 = datetime.datetime.fromisoformat(end_str)
+                t1_utc = datetime.datetime.fromisoformat(start_time_raw)
+                t2_utc = datetime.datetime.fromisoformat(end_time_raw)
 
-                duration = t2 - t1
+                duration = t2_utc - t1_utc
                 total_secs = int(duration.total_seconds())
 
                 hours, rem = divmod(total_secs, 3600)
                 mins, secs = divmod(rem, 60)
                 ride["duration"] = f"{hours:02}:{mins:02}:{secs:02}"
-                ride["start_str"] = t1.astimezone(TIMEZONE).strftime(fmt)
-                ride["end_str"] = t2.astimezone(TIMEZONE).strftime(fmt)
+
+                ride["start_str"] = t1_utc.astimezone(TIMEZONE).strftime(fmt)
             except ValueError:
                 ride["duration"] = "Error"
         else:
             ride["duration"] = "Incomplete"
 
+        ride["wind_arrow"] = get_wind_arrow(ride.get("wind_dir"))
         history.append(ride)
 
     return templates.TemplateResponse(
