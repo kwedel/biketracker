@@ -175,6 +175,14 @@ async def index(
     )
 
 
+def get_wind_arrow(degrees):
+    if degrees is None:
+        return ""
+    arrows = ["↓", "↙", "←", "↖", "↑", "↗", "→", "↘"]
+    idx = int((degrees + 22.5) % 360 // 45)
+    return arrows[idx]
+
+
 @app.get("/history", response_class=HTMLResponse)
 async def get_history(
     request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
@@ -208,15 +216,12 @@ async def get_history(
                 ride["duration"] = f"{hours:02}:{mins:02}:{secs:02}"
 
                 ride["start_str"] = t1.strftime(fmt)
-                if t1.date() == t2.date():
-                    ride["end_str"] = t2.strftime("%H:%M")
-                else:
-                    ride["end_str"] = t2.strftime(fmt)
             except ValueError:
                 ride["duration"] = "Error"
         else:
             ride["duration"] = "Incomplete"
 
+        ride["wind_arrow"] = get_wind_arrow(ride.get("wind_dir"))
         history.append(ride)
 
     return templates.TemplateResponse(

@@ -19,10 +19,7 @@
 	      </span>
             </td>
             <td>
-              <span class="data-small">S: {{ ride.start_str }}
-	      </span>
-	      <br>
-              <span class="data-small">E: {{ ride.end_str }}
+              <span class="data-small">{{ ride.start_str }}
 	      </span>
             </td>
             <td>
@@ -32,7 +29,7 @@
             <td>
               {{ ride.temp }}°C ({{ ride.precip_next_hour }}mm)
 	      <br>
-              <span class="data-small">Wind: {{ ride.wind_speed }}m/s {{ ride.wind_dir }}°</span>
+              <span class="data-small">{{ ride.wind_speed }}m/s {{ ride.wind_arrow }}</span>
             </td>
             </tr>
             {% endfor %}
