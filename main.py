@@ -1,4 +1,5 @@
 import datetime
+import random
 import sqlite3
 from zoneinfo import ZoneInfo
 
@@ -291,6 +292,29 @@ async def dashboard(request: Request, auth=Depends(check_auth)):
         request=request,
         name="dashboard.html",
         context={"request": request, "chart_json": chart_json, "stats": stats},
+    )
+
+
+@app.get("/recommend", response_class=HTMLResponse)
+async def recommend(auth=Depends(check_auth)):
+    recommendations = [
+        ("A", "The winds are favorable for Route A today!"),
+        ("A", "Route A has the least traffic right now."),
+        ("B", "Route B is looking particularly scenic this morning."),
+        ("B", "Route B is the fastest according to recent trends."),
+        ("C", "There's a tailwind on Route C, take advantage of it!"),
+        ("C", "Route C is the most sheltered from the current wind."),
+    ]
+    route, explanation = random.choice(recommendations)
+
+    return HTMLResponse(
+        content=f"""
+        <details open>
+            <summary>Why this route?</summary>
+            <p>{explanation}</p>
+        </details>
+        <script>selectOption('route', '{route}')</script>
+    """
     )
 
 
