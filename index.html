@@ -55,21 +55,25 @@
                 <input type="hidden" name="direction" id="direction-input" value="work">
                 <input type="hidden" name="route" id="route-input" value="A">
 
-                <div class="grid">
-                    <div>
-                        <label>Direction</label>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                            <button type="button" id="btn-direction-work" class="secondary" onclick="selectOption('direction', 'work')">To Work</button>
-                            <button type="button" id="btn-direction-home" class="secondary outline" onclick="selectOption('direction', 'home')">Home</button>
-                        </div>
+                <div>
+                    <label>Direction</label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                        <button type="button" id="btn-direction-work" class="secondary" onclick="selectOption('direction', 'work')">To Work</button>
+                        <button type="button" id="btn-direction-home" class="secondary outline" onclick="selectOption('direction', 'home')">Home</button>
                     </div>
-                    <div>
-                        <label>Route</label>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
-                            <button type="button" id="btn-route-A" class="secondary" onclick="selectOption('route', 'A')">A</button>
-                            <button type="button" id="btn-route-B" class="secondary outline" onclick="selectOption('route', 'B')">B</button>
-                            <button type="button" id="btn-route-C" class="secondary outline" onclick="selectOption('route', 'C')">C</button>
-                        </div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <button type="button" class="primary" hx-get="/recommend" hx-target="#recommendation-area" hx-swap="innerHTML">Recommend route</button>
+                    <div id="recommendation-area"></div>
+                </div>
+
+                <div>
+                    <label>Route</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                        <button type="button" id="btn-route-A" class="secondary" onclick="selectOption('route', 'A')">A</button>
+                        <button type="button" id="btn-route-B" class="secondary outline" onclick="selectOption('route', 'B')">B</button>
+                        <button type="button" id="btn-route-C" class="secondary outline" onclick="selectOption('route', 'C')">C</button>
                     </div>
                 </div>
 
