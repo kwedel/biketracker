@@ -186,19 +186,19 @@ async def get_history(
     history_rows = cursor.fetchall()
 
     history = []
-    fmt = "%Y-%m-%d %H:%M:%S"
+    fmt = "%d/%m %H:%M"
 
     for row in history_rows:
         # Convert sqlite3.Row to a standard dictionary
         ride = dict(row)
 
-        start_str = ride.get("start_time")
-        end_str = ride.get("end_time")
+        start_time_raw = ride.get("start_time")
+        end_time_raw = ride.get("end_time")
 
-        if start_str and end_str:
+        if start_time_raw and end_time_raw:
             try:
-                t1 = datetime.datetime.fromisoformat(start_str)
-                t2 = datetime.datetime.fromisoformat(end_str)
+                t1 = datetime.datetime.fromisoformat(start_time_raw).astimezone(TIMEZONE)
+                t2 = datetime.datetime.fromisoformat(end_time_raw).astimezone(TIMEZONE)
 
                 duration = t2 - t1
                 total_secs = int(duration.total_seconds())
@@ -206,8 +206,12 @@ async def get_history(
                 hours, rem = divmod(total_secs, 3600)
                 mins, secs = divmod(rem, 60)
                 ride["duration"] = f"{hours:02}:{mins:02}:{secs:02}"
-                ride["start_str"] = t1.astimezone(TIMEZONE).strftime(fmt)
-                ride["end_str"] = t2.astimezone(TIMEZONE).strftime(fmt)
+
+                ride["start_str"] = t1.strftime(fmt)
+                if t1.date() == t2.date():
+                    ride["end_str"] = t2.strftime("%H:%M")
+                else:
+                    ride["end_str"] = t2.strftime(fmt)
             except ValueError:
                 ride["duration"] = "Error"
         else:

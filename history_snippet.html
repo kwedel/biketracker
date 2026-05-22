@@ -3,10 +3,9 @@
         <thead>
             <tr>
               <th>Route</th>
-	      <th>Times</th>
-                <th>Duration</th>
-              <th>Weather</th>
-	      <th>Wind</th>
+	      <th>Time</th>
+                <th>Dur.</th>
+              <th>Cond.</th>
             </tr>
         </thead>
         <tbody>
@@ -31,16 +30,10 @@
 	      </strong>
             </td>
             <td>
-              {{ ride.temp }}°C
+              {{ ride.temp }}°C ({{ ride.precip_next_hour }}mm)
 	      <br>
-              <span class="data-small">Rain: {{ ride.precip_next_hour }}mm
-	      </span>
+              <span class="data-small">Wind: {{ ride.wind_speed }}m/s {{ ride.wind_dir }}°</span>
             </td>
-            <td>
-              {{ ride.wind_speed }}m/s
-	      <br>
-              <span class="data-small">{{ ride.wind_dir }}°
-	      </span>
             </tr>
             {% endfor %}
         </tbody>
