@@ -205,17 +205,17 @@ async def get_history(
 
         if start_time_raw and end_time_raw:
             try:
-                t1 = datetime.datetime.fromisoformat(start_time_raw).astimezone(TIMEZONE)
-                t2 = datetime.datetime.fromisoformat(end_time_raw).astimezone(TIMEZONE)
+                t1_utc = datetime.datetime.fromisoformat(start_time_raw)
+                t2_utc = datetime.datetime.fromisoformat(end_time_raw)
 
-                duration = t2 - t1
+                duration = t2_utc - t1_utc
                 total_secs = int(duration.total_seconds())
 
                 hours, rem = divmod(total_secs, 3600)
                 mins, secs = divmod(rem, 60)
                 ride["duration"] = f"{hours:02}:{mins:02}:{secs:02}"
 
-                ride["start_str"] = t1.strftime(fmt)
+                ride["start_str"] = t1_utc.astimezone(TIMEZONE).strftime(fmt)
             except ValueError:
                 ride["duration"] = "Error"
         else:
