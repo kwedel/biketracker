@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-themes@6"></script>
 </head>
 <body class="container">
     <nav>
@@ -43,7 +44,32 @@
 
     <script type="text/javascript">
         var spec = {{ chart_json | safe }};
-        vegaEmbed('#vis', spec, {actions: false});
+
+        function renderChart() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+                          (!document.documentElement.getAttribute('data-theme') &&
+                           window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+            vegaEmbed('#vis', spec, {
+                actions: false,
+                theme: isDark ? 'dark' : 'default'
+            });
+        }
+
+        renderChart();
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderChart);
+
+        // Listen for PicoCSS theme changes (via data-theme attribute)
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'data-theme') {
+                    renderChart();
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
     </script>
     {% else %}
     <article>Not enough data to generate insights yet.</article>
