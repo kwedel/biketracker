@@ -1,25 +1,16 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ride Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+{% extends "base.html" %}
+
+{% set active_page = 'dashboard' %}
+
+{% block title %}Ride Dashboard{% endblock %}
+
+{% block extra_head %}
     <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
-</head>
-<body class="container">
-    <nav>
-        <ul>
-            <li><strong>🚲 BikeData</strong></li>
-        </ul>
-        <ul>
-            <li><a href="/" class="secondary">Tracker</a></li>
-            <li><a href="/dashboard" class="contrast">Dashboard</a></li>
-        </ul>
-    </nav>
+{% endblock %}
 
+{% block content %}
     {% if stats %}
     <div class="grid">
         <article>
@@ -48,5 +39,4 @@
     {% else %}
     <article>Not enough data to generate insights yet.</article>
     {% endif %}
-</body>
-</html>
+{% endblock %}

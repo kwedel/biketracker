@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Bike Tracker - Login{% endblock %}
+
+{% block content %}
+<article style="max-width: 400px; margin: 40px auto;">
+    <header>Authentication Required</header>
+    <form action="/login" method="post">
+        <input type="password" name="password" placeholder="Enter Password" required autofocus>
+        <button type="submit">Unlock Tracker</button>
+    </form>
+</article>
+{% endblock %}
