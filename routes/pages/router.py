@@ -1,4 +1,5 @@
 import datetime
+import hmac
 import sqlite3
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -21,7 +22,7 @@ async def login_get(request: Request):
 
 @router.post("/login")
 async def login_post(request: Request, password: str = Form(...)):
-    if password == settings.USER_PASSWORD:
+    if hmac.compare_digest(password, settings.USER_PASSWORD):
         request.session["logged_in"] = True
         return RedirectResponse(url="/", status_code=303)
     return RedirectResponse(url="/login", status_code=303)
