@@ -56,7 +56,7 @@ async def index(
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, auth=Depends(check_auth)):
-    chart_json, stats = get_dashboard_data("bike_rides.db")
+    chart_json, stats = get_dashboard_data(settings.DB_PATH)
     return templates.TemplateResponse(
         request=request,
         name="pages/dashboard.html",
