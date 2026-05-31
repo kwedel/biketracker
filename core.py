@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import sqlite3
 from zoneinfo import ZoneInfo
@@ -81,9 +82,17 @@ async def get_departure_data():
     }
 
     async with httpx.AsyncClient() as client:
-        try:
-            n_res = await client.get(nowcast_url, headers=headers)
-            if n_res.status_code == 200:
+        responses = await asyncio.gather(
+            client.get(nowcast_url, headers=headers),
+            client.get(sun_url, headers=headers),
+            return_exceptions=True,
+        )
+
+        n_res = responses[0]
+        if isinstance(n_res, Exception):
+            print(f"Error fetching nowcast data: {n_res}")
+        elif n_res.status_code == 200:
+            try:
                 n_json = n_res.json()["properties"]["timeseries"][0]["data"]
                 instant = n_json.get("instant", {}).get("details", {})
                 next_hour = n_json.get("next_1_hours", {}).get("details", {})
@@ -101,15 +110,19 @@ async def get_departure_data():
                         "symbol": summary.get("symbol_code", "unknown"),
                     }
                 )
+            except (KeyError, IndexError, ValueError) as e:
+                print(f"Error parsing nowcast data: {e}")
 
-            s_res = await client.get(sun_url, headers=headers)
-            if s_res.status_code == 200:
+        s_res = responses[1]
+        if isinstance(s_res, Exception):
+            print(f"Error fetching sun data: {s_res}")
+        elif s_res.status_code == 200:
+            try:
                 s_props = s_res.json()["properties"]
                 data["sunrise"] = s_props["sunrise"]["time"]
                 data["sunset"] = s_props["sunset"]["time"]
-
-        except Exception as e:
-            print(f"Error fetching MET data: {e}")
+            except (KeyError, ValueError) as e:
+                print(f"Error parsing sun data: {e}")
 
     return data
 
