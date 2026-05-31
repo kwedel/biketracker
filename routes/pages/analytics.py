@@ -1,6 +1,7 @@
-import polars as pl
-import altair as alt
 import datetime
+
+import altair as alt
+import polars as pl
 
 
 def get_dashboard_data(db_path):
@@ -56,7 +57,7 @@ def get_dashboard_data(db_path):
     stats = {
         "total_trips": df.height,
         "rainy_trips": df.filter(pl.col("precip_next_hour") > 0).height,
-        "avg_duration": f'{round(df["duration_min"].mean(), 1)}±{round(df["duration_min"].std(), 1)}',
+        "avg_duration": f"{round(df['duration_min'].mean(), 1)}±{round(df['duration_min'].std(), 1)}",
     }
 
     return chart.to_json(), stats
