@@ -9,12 +9,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    USER_PASSWORD: str  # The password to unlock the app
-    session_key: str  # For signing cookies
+    USER_PASSWORD: str = "devpassword"  # The password to unlock the app
+    session_key: str = "devsessionkey"  # For signing cookies
     LAT: float = 55.71  # Lattitude
     LON: float = 12.50  # Longitude
     CONTACT_EMAIL: str = "your@email.com"  # Email for the MET-API
     TIMEZONE: str = "Europe/Copenhagen"
+    DB_PATH: str = "bike_rides.db"
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
@@ -26,7 +27,7 @@ templates = Jinja2Templates(directory="templates")
 
 # --- Database Setup ---
 def get_db():
-    conn = sqlite3.connect("bike_rides.db", check_same_thread=False)
+    conn = sqlite3.connect(settings.DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -35,7 +36,7 @@ def get_db():
 
 
 def init_db():
-    with sqlite3.connect("bike_rides.db") as conn:
+    with sqlite3.connect(settings.DB_PATH) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS rides (
