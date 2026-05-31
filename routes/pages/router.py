@@ -1,12 +1,14 @@
 import datetime
 import sqlite3
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from core import templates, get_db, check_auth, TIMEZONE, settings
+from core import TIMEZONE, check_auth, get_db, settings, templates
 from routes.pages.analytics import get_dashboard_data
 
 router = APIRouter()
+
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
@@ -16,12 +18,14 @@ async def login_get(request: Request):
         context={"request": request},
     )
 
+
 @router.post("/login")
 async def login_post(request: Request, password: str = Form(...)):
     if password == settings.USER_PASSWORD:
         request.session["logged_in"] = True
         return RedirectResponse(url="/", status_code=303)
     return RedirectResponse(url="/login", status_code=303)
+
 
 @router.get("/", response_class=HTMLResponse)
 async def index(
@@ -47,6 +51,7 @@ async def index(
             "local_start_time": local_start_time,
         },
     )
+
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, auth=Depends(check_auth)):

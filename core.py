@@ -3,9 +3,10 @@ import sqlite3
 from zoneinfo import ZoneInfo
 
 import httpx
-from fastapi import Depends, HTTPException, Request
+from fastapi import HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     USER_PASSWORD: str  # The password to unlock the app
@@ -16,10 +17,12 @@ class Settings(BaseSettings):
     TIMEZONE: str = "Europe/Copenhagen"
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+
 settings = Settings()
 TIMEZONE = ZoneInfo(settings.TIMEZONE)
 
 templates = Jinja2Templates(directory="templates")
+
 
 # --- Database Setup ---
 def get_db():
@@ -29,6 +32,7 @@ def get_db():
         yield conn
     finally:
         conn.close()
+
 
 def init_db():
     with sqlite3.connect("bike_rides.db") as conn:
@@ -45,6 +49,7 @@ def init_db():
         """
         )
 
+
 # --- Auth Dependency ---
 async def check_auth(request: Request):
     if not request.session.get("logged_in"):
@@ -52,6 +57,7 @@ async def check_auth(request: Request):
             status_code=307, detail="Auth required", headers={"Location": "/login"}
         )
     return True
+
 
 # --- API Fetcher (MET Norway) ---
 async def get_departure_data():
@@ -106,6 +112,7 @@ async def get_departure_data():
             print(f"Error fetching MET data: {e}")
 
     return data
+
 
 def get_wind_arrow(degrees):
     if degrees is None:

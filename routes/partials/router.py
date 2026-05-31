@@ -1,12 +1,21 @@
 import datetime
 import random
 import sqlite3
+
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from core import templates, get_db, check_auth, get_departure_data, get_wind_arrow, TIMEZONE
+from core import (
+    TIMEZONE,
+    check_auth,
+    get_db,
+    get_departure_data,
+    get_wind_arrow,
+    templates,
+)
 
 router = APIRouter()
+
 
 @router.get("/history", response_class=HTMLResponse)
 async def get_history(
@@ -51,6 +60,7 @@ async def get_history(
         context={"rides": history},
     )
 
+
 @router.post("/start")
 async def start_ride(
     route: str = Form(...),
@@ -90,6 +100,7 @@ async def start_ride(
     db.commit()
     return RedirectResponse(url="/", status_code=303)
 
+
 @router.post("/stop/{ride_id}")
 async def stop_ride(
     ride_id: int, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
@@ -99,6 +110,7 @@ async def stop_ride(
     db.commit()
     return Response(headers={"HX-Refresh": "true"})
 
+
 @router.post("/cancel/{ride_id}")
 async def cancel_ride(
     ride_id: int, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
@@ -106,6 +118,7 @@ async def cancel_ride(
     db.execute("DELETE FROM rides WHERE id = ?", (ride_id,))
     db.commit()
     return Response(headers={"HX-Refresh": "true"})
+
 
 @router.get("/recommend", response_class=HTMLResponse)
 async def recommend(auth=Depends(check_auth)):
@@ -117,7 +130,7 @@ async def recommend(auth=Depends(check_auth)):
         ("C", "There's a tailwind on Route C, take advantage of it!"),
         ("C", "Route C is the most sheltered from the current wind."),
     ]
-    route, explanation = random.choice(recommendations)
+    route, explanation = random.choice(recommendations)  # noqa S311
 
     return HTMLResponse(
         content=f"""

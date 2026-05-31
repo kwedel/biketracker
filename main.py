@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
-from core import settings, init_db
-from routes.pages import router as pages_router
-from routes.partials import router as partials_router
+from core import init_db, settings
+from routes.pages.router import router as pages_router
+from routes.partials.router import router as partials_router
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=settings.session_key)
@@ -12,10 +12,13 @@ app.add_middleware(SessionMiddleware, secret_key=settings.session_key)
 app.include_router(pages_router)
 app.include_router(partials_router)
 
+
 @app.on_event("startup")
 async def startup_event():
     init_db()
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=8000)
