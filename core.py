@@ -130,7 +130,7 @@ async def get_departure_data():
             res = await client.get(sun_url, headers=headers)
             if res.status_code == 200:
                 res_json = res.json()
-                cache.set(sun_url, res_json)
+                cache.set(sun_url, res_json, expire=86400)  # 24 hours
                 return res_json
         except Exception as e:
             print(f"Error fetching sun data: {e}")
