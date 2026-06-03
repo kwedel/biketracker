@@ -121,7 +121,7 @@ async def cancel_ride(
 
 
 @router.get("/recommend", response_class=HTMLResponse)
-async def recommend(auth=Depends(check_auth)):
+async def recommend(request: Request, auth=Depends(check_auth)):
     recommendations = [
         ("A", "The winds are favorable for Route A today!"),
         ("A", "Route A has the least traffic right now."),
@@ -132,12 +132,17 @@ async def recommend(auth=Depends(check_auth)):
     ]
     route, explanation = random.choice(recommendations)  # noqa S311
 
-    return HTMLResponse(
-        content=f"""
-        <details open>
-            <summary>Why this route?</summary>
-            <p>{explanation}</p>
-        </details>
-        <script>selectOption('route', '{route}')</script>
-    """
+    weather = await get_departure_data()
+    wind_arrow = get_wind_arrow(weather.get("w_dir"))
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/recommendation.html",
+        context={
+            "request": request,
+            "weather": weather,
+            "wind_arrow": wind_arrow,
+            "route": route,
+            "explanation": explanation,
+        },
     )

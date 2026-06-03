@@ -1,0 +1,19 @@
+<details open>
+    <summary>Why this route?</summary>
+    <div class="grid" style="text-align: center; margin-bottom: 1rem;">
+        <div>
+            <small>Temperature</small><br>
+            <strong>{{ weather.temp }}°C</strong>
+        </div>
+        <div>
+            <small>Precipitation</small><br>
+            <strong>{{ weather.precip_next_hour }} mm</strong>
+        </div>
+        <div>
+            <small>Wind</small><br>
+            <strong>{{ weather.w_spd }} m/s {{ wind_arrow }}</strong>
+        </div>
+    </div>
+    <p>{{ explanation }}</p>
+</details>
+<script>selectOption('route', '{{ route }}')</script>
