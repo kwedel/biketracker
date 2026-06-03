@@ -19,7 +19,7 @@ jobs:
             cd /home/${{ secrets.VPS_USER }}/biketracker
             git pull origin main
             
-            # Use uv to sync dependencies instantly
+            # Use uv to sync dependencies 
             /home/${{ secrets.VPS_USER }}/.local/bin/uv sync
             
             sudo systemctl restart bike-tracker.service
