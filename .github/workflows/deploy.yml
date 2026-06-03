@@ -2,7 +2,8 @@ name: Deploy Python App
 
 on:
   push:
-    branches: [ main ]
+    tags:
+      - 'v*'
 
 jobs:
   deploy:
@@ -19,6 +20,6 @@ jobs:
             git pull origin main
             
             # Use uv to sync dependencies instantly
-            /home/${{ secrets.VPS_USER }}/.cargo/bin/uv sync
+            /home/${{ secrets.VPS_USER }}/.local/bin/uv sync
             
             sudo systemctl restart bike-tracker.service
