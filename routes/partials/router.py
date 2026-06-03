@@ -5,14 +5,14 @@ import sqlite3
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from config import TIMEZONE
 from core import (
-    TIMEZONE,
     check_auth,
     get_db,
     get_departure_data,
-    get_wind_arrow,
     templates,
 )
+from services.weather import get_wind_arrow
 
 router = APIRouter()
 
