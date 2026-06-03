@@ -3,7 +3,8 @@ import logging
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
-from core import init_db, settings
+from config import settings
+from core import init_db
 from routes.pages.router import router as pages_router
 from routes.partials.router import router as partials_router
 

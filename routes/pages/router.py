@@ -5,7 +5,8 @@ import sqlite3
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from core import TIMEZONE, check_auth, get_db, settings, templates
+from config import TIMEZONE, settings
+from core import check_auth, get_db, templates
 from routes.pages.analytics import get_dashboard_data
 
 router = APIRouter()
