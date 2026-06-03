@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import email.utils
+import logging
 import sqlite3
 from zoneinfo import ZoneInfo
 
@@ -10,6 +11,8 @@ from fastapi import HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+logger = logging.getLogger("biketracker.core")
+
 
 class Settings(BaseSettings):
     USER_PASSWORD: str  # The password to unlock the app
@@ -18,6 +21,7 @@ class Settings(BaseSettings):
     LON: float = 12.50  # Longitude
     CONTACT_EMAIL: str = "your@email.com"  # Email for the MET-API
     TIMEZONE: str = "Europe/Copenhagen"
+    loglevel: str = "INFO"
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
@@ -91,6 +95,7 @@ async def get_departure_data():
         if cached:
             expires = cached.get("expires")
             if expires and datetime.datetime.now(datetime.UTC) < expires:
+                logger.debug("Nowcast cache not expired - returning cached data")
                 return cached["data"]
 
             last_mod = cached.get("last_modified")
@@ -98,8 +103,10 @@ async def get_departure_data():
                 n_headers["If-Modified-Since"] = last_mod
 
         try:
+            logger.debug("Fetching nowcast")
             res = await client.get(nowcast_url, headers=n_headers)
             if res.status_code == 304 and cached:
+                logger.debug("Nowcast not modified - returning cached nowcast")
                 return cached["data"]
             if res.status_code == 200:
                 res_json = res.json()
@@ -116,8 +123,8 @@ async def get_departure_data():
                     {"data": res_json, "expires": exp_dt, "last_modified": lm_str},
                 )
                 return res_json
-        except Exception as e:
-            print(f"Error fetching nowcast data: {e}")
+        except Exception:
+            logger.exception("Error fetching nowcast data")
 
         return cached["data"] if cached else None
 
@@ -132,8 +139,8 @@ async def get_departure_data():
                 res_json = res.json()
                 cache.set(sun_url, res_json, expire=86400)  # 24 hours
                 return res_json
-        except Exception as e:
-            print(f"Error fetching sun data: {e}")
+        except Exception:
+            logger.exception("Error fetching sun data")
         return None
 
     async with httpx.AsyncClient() as client:
@@ -159,7 +166,7 @@ async def get_departure_data():
                     }
                 )
             except (KeyError, IndexError, ValueError) as e:
-                print(f"Error parsing nowcast data: {e}")
+                logger.exception("Error parsing nowcast data")
 
         if s_json:
             try:
@@ -167,7 +174,7 @@ async def get_departure_data():
                 data["sunrise"] = s_props["sunrise"]["time"]
                 data["sunset"] = s_props["sunset"]["time"]
             except (KeyError, ValueError) as e:
-                print(f"Error parsing sun data: {e}")
+                logger.exception("Error parsing sun data")
 
     return data
 
