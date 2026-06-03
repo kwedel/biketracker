@@ -34,16 +34,18 @@ def get_dashboard_data(db_path):
     )
 
     # 3. Create Altair Chart
-    alt.themes.enable("carbong90")
+    alt.themes.enable("dark")
     chart = (
         alt.Chart(df)
-        .mark_circle(size=80)
+        .mark_point(size=120, filled=True)
         .encode(
             x=alt.X("start_time", title="Departure time"),
-            y=alt.Y("duration_min", title="Duration (Minutes)"),
-            color="direction",
+            y=alt.Y("duration_min", title="Duration (Minutes)").scale(zero=False),
+            color="route",
+            shape="direction",
             tooltip=[
                 "route",
+                "direction",
                 "temp",
                 alt.Tooltip("duration_min", format=".1f", title="Minutter"),
                 "precip_next_hour",
