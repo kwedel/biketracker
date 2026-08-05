@@ -63,6 +63,28 @@ async def get_history(
     return HTMLResponse(content=history_html)
 
 
+def _utc_to_local_str(iso_str: str | None) -> str:
+    if not iso_str:
+        return ""
+    try:
+        t_utc = datetime.datetime.fromisoformat(iso_str)
+        if t_utc.tzinfo is None:
+            t_utc = t_utc.replace(tzinfo=datetime.UTC)
+        return t_utc.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return ""
+
+
+def _local_to_utc_str(local_str: str) -> str:
+    try:
+        dt_naive = datetime.datetime.fromisoformat(local_str)
+        dt_local = dt_naive.replace(tzinfo=TIMEZONE)
+        dt_utc = dt_local.astimezone(datetime.UTC)
+        return dt_utc.isoformat(timespec="seconds")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail="Invalid datetime format") from e
+
+
 @router.get("/rides/{ride_id}/edit", response_class=HTMLResponse)
 async def edit_ride_get(
     ride_id: int,
@@ -75,23 +97,8 @@ async def edit_ride_get(
         raise HTTPException(status_code=404, detail="Ride not found")
 
     ride_dict = dict(ride)
-
-    start_time_raw = ride_dict.get("start_time")
-    end_time_raw = ride_dict.get("end_time")
-
-    start_time_local = ""
-    if start_time_raw:
-        t_utc = datetime.datetime.fromisoformat(start_time_raw)
-        if t_utc.tzinfo is None:
-            t_utc = t_utc.replace(tzinfo=datetime.UTC)
-        start_time_local = t_utc.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%S")
-
-    end_time_local = ""
-    if end_time_raw:
-        t_utc = datetime.datetime.fromisoformat(end_time_raw)
-        if t_utc.tzinfo is None:
-            t_utc = t_utc.replace(tzinfo=datetime.UTC)
-        end_time_local = t_utc.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%S")
+    start_time_local = _utc_to_local_str(ride_dict.get("start_time"))
+    end_time_local = _utc_to_local_str(ride_dict.get("end_time"))
 
     return templates.TemplateResponse(
         request=request,
@@ -120,21 +127,8 @@ async def edit_ride_post(
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
 
-    try:
-        start_dt_naive = datetime.datetime.fromisoformat(start_time)
-        start_dt_local = start_dt_naive.replace(tzinfo=TIMEZONE)
-        start_dt_utc = start_dt_local.astimezone(datetime.UTC)
-        start_time_utc_str = start_dt_utc.isoformat(timespec="seconds")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid start time format")
-
-    try:
-        end_dt_naive = datetime.datetime.fromisoformat(end_time)
-        end_dt_local = end_dt_naive.replace(tzinfo=TIMEZONE)
-        end_dt_utc = end_dt_local.astimezone(datetime.UTC)
-        end_time_utc_str = end_dt_utc.isoformat(timespec="seconds")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid end time format")
+    start_time_utc_str = _local_to_utc_str(start_time)
+    end_time_utc_str = _local_to_utc_str(end_time)
 
     db.execute(
         """
