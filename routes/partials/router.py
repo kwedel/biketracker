@@ -70,7 +70,7 @@ def _utc_to_local_str(iso_str: str | None) -> str:
         t_utc = datetime.datetime.fromisoformat(iso_str)
         if t_utc.tzinfo is None:
             t_utc = t_utc.replace(tzinfo=datetime.UTC)
-        return t_utc.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%S")
+        return t_utc.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M")
     except ValueError:
         return ""
 
