@@ -10,7 +10,7 @@
         </thead>
         <tbody>
             {% for ride in rides %}
-            <tr>
+            <tr class="clickable-row" hx-get="/rides/{{ ride.id }}/edit" hx-target="#modal-container" hx-swap="innerHTML">
 	      <td>
               <strong>{{ ride.route }}
 	      </strong>

@@ -1,0 +1,23 @@
+/app/main.py:22: DeprecationWarning:
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+
+  @app.on_event("startup")
+INFO:     Started server process [281906]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:47294 - "GET /login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47294 - "POST /login HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:47294 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47294 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47294 - "GET /rides/3/edit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47294 - "POST /rides/3/edit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47294 - "GET /rides/3/edit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47294 - "DELETE /rides/3/delete?start_time=2025-02-15T09%3A00&end_time=2025-02-15T09%3A35&route=B&direction=work&extra_dist=1 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [281906]
