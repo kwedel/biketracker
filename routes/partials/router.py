@@ -2,7 +2,7 @@ import datetime
 import random
 import sqlite3
 
-from fastapi import APIRouter, Depends, Form, Request, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from config import TIMEZONE
@@ -17,10 +17,7 @@ from services.weather import get_wind_arrow
 router = APIRouter()
 
 
-@router.get("/history", response_class=HTMLResponse)
-async def get_history(
-    request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
-):
+def _render_history(request: Request, db: sqlite3.Connection) -> str:
     cursor = db.execute(
         "SELECT * FROM rides WHERE end_time IS NOT NULL ORDER BY id DESC LIMIT 15"
     )
@@ -54,11 +51,130 @@ async def get_history(
         ride["wind_arrow"] = get_wind_arrow(ride.get("wind_dir"))
         history.append(ride)
 
+    template = templates.get_template("partials/history_snippet.html")
+    return template.render(request=request, rides=history)
+
+
+@router.get("/history", response_class=HTMLResponse)
+async def get_history(
+    request: Request, db: sqlite3.Connection = Depends(get_db), auth=Depends(check_auth)
+):
+    history_html = _render_history(request, db)
+    return HTMLResponse(content=history_html)
+
+
+@router.get("/rides/{ride_id}/edit", response_class=HTMLResponse)
+async def edit_ride_get(
+    ride_id: int,
+    request: Request,
+    db: sqlite3.Connection = Depends(get_db),
+    auth=Depends(check_auth)
+):
+    ride = db.execute("SELECT * FROM rides WHERE id = ?", (ride_id,)).fetchone()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    ride_dict = dict(ride)
+
+    start_time_raw = ride_dict.get("start_time")
+    end_time_raw = ride_dict.get("end_time")
+
+    start_time_local = ""
+    if start_time_raw:
+        t_utc = datetime.datetime.fromisoformat(start_time_raw)
+        if t_utc.tzinfo is None:
+            t_utc = t_utc.replace(tzinfo=datetime.UTC)
+        start_time_local = t_utc.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%S")
+
+    end_time_local = ""
+    if end_time_raw:
+        t_utc = datetime.datetime.fromisoformat(end_time_raw)
+        if t_utc.tzinfo is None:
+            t_utc = t_utc.replace(tzinfo=datetime.UTC)
+        end_time_local = t_utc.astimezone(TIMEZONE).strftime("%Y-%m-%dT%H:%M:%S")
+
     return templates.TemplateResponse(
         request=request,
-        name="partials/history_snippet.html",
-        context={"rides": history},
+        name="partials/edit_modal.html",
+        context={
+            "ride": ride_dict,
+            "start_time_local": start_time_local,
+            "end_time_local": end_time_local,
+        }
     )
+
+
+@router.post("/rides/{ride_id}/edit", response_class=HTMLResponse)
+async def edit_ride_post(
+    ride_id: int,
+    request: Request,
+    start_time: str = Form(...),
+    end_time: str = Form(...),
+    route: str = Form(...),
+    direction: str = Form(...),
+    extra_dist: bool = Form(False),
+    db: sqlite3.Connection = Depends(get_db),
+    auth=Depends(check_auth)
+):
+    ride = db.execute("SELECT * FROM rides WHERE id = ?", (ride_id,)).fetchone()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    try:
+        start_dt_naive = datetime.datetime.fromisoformat(start_time)
+        start_dt_local = start_dt_naive.replace(tzinfo=TIMEZONE)
+        start_dt_utc = start_dt_local.astimezone(datetime.UTC)
+        start_time_utc_str = start_dt_utc.isoformat(timespec="seconds")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid start time format")
+
+    try:
+        end_dt_naive = datetime.datetime.fromisoformat(end_time)
+        end_dt_local = end_dt_naive.replace(tzinfo=TIMEZONE)
+        end_dt_utc = end_dt_local.astimezone(datetime.UTC)
+        end_time_utc_str = end_dt_utc.isoformat(timespec="seconds")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid end time format")
+
+    db.execute(
+        """
+        UPDATE rides
+        SET start_time = ?, end_time = ?, route = ?, direction = ?, extra_dist = ?
+        WHERE id = ?
+        """,
+        (
+            start_time_utc_str,
+            end_time_utc_str,
+            route,
+            direction,
+            1 if extra_dist else 0,
+            ride_id
+        )
+    )
+    db.commit()
+
+    history_html = _render_history(request, db)
+    response_html = f'{history_html}\n<div id="modal-container" hx-swap-oob="true"></div>'
+    return HTMLResponse(content=response_html)
+
+
+@router.delete("/rides/{ride_id}/delete", response_class=HTMLResponse)
+async def delete_ride(
+    ride_id: int,
+    request: Request,
+    db: sqlite3.Connection = Depends(get_db),
+    auth=Depends(check_auth)
+):
+    ride = db.execute("SELECT * FROM rides WHERE id = ?", (ride_id,)).fetchone()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    db.execute("DELETE FROM rides WHERE id = ?", (ride_id,))
+    db.commit()
+
+    history_html = _render_history(request, db)
+    response_html = f'{history_html}\n<div id="modal-container" hx-swap-oob="true"></div>'
+    return HTMLResponse(content=response_html)
 
 
 @router.post("/start")

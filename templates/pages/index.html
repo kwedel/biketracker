@@ -60,9 +60,11 @@
 
 <hr>
 <h4>Recent Rides</h4>
-<div hx-get="/history" hx-trigger="load" hx-swap="innerHTML">
+<div id="history-container" hx-get="/history" hx-trigger="load" hx-swap="innerHTML">
   <article aria-busy="true">Loading ride history...</article>
 </div>
+
+<div id="modal-container"></div>
 {% endblock %}
 
 {% block scripts %}
