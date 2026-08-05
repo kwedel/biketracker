@@ -4,33 +4,6 @@
       <a href="#close" aria-label="Close" class="close" onclick="document.getElementById('modal-container').innerHTML = ''; return false;"></a>
       Edit Ride #{{ ride.id }}
     </header>
-    <style>
-      .input-container {
-        margin-bottom: 1.25rem;
-      }
-      .input-label-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.25rem;
-      }
-      .input-label-row label {
-        margin-bottom: 0;
-      }
-      .change-badge {
-        background-color: #e67e22;
-        color: white;
-        font-size: 0.7rem;
-        padding: 0.15rem 0.4rem;
-        border-radius: 4px;
-        font-weight: bold;
-        display: none;
-      }
-      .is-modified {
-        border-color: #e67e22 !important;
-        box-shadow: 0 0 5px rgba(230, 126, 34, 0.5) !important;
-      }
-    </style>
     <form id="edit-ride-form" hx-post="/rides/{{ ride.id }}/edit" hx-target="#history-container" hx-swap="innerHTML">
       <div class="input-container">
         <div class="input-label-row">
