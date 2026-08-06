@@ -17,7 +17,7 @@ templates = Jinja2Templates(directory="templates")
 
 # --- Database Setup ---
 def get_db():
-    conn = sqlite3.connect("bike_rides.db", check_same_thread=False)
+    conn = sqlite3.connect(settings.DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -26,7 +26,7 @@ def get_db():
 
 
 def init_db():
-    with sqlite3.connect("bike_rides.db") as conn:
+    with sqlite3.connect(settings.DB_PATH) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS rides (
