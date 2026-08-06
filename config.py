@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     CONTACT_EMAIL: str = "your@email.com"  # Email for the MET-API
     TIMEZONE: str = "Europe/Copenhagen"
     loglevel: str = "INFO"
+    DB_PATH: str = "bike_rides.db"
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

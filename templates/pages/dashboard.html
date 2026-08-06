@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-themes@6"></script>
 {% endblock %}
 
 {% block content %}
@@ -28,13 +29,65 @@
     </div>
 
     <article>
-        <header>Travel Time by date</header>
-        <div id="vis" style="width: 100%;"></div>
+        <header>Travel Time by Date</header>
+        <div id="vis-timeline" style="width: 100%;"></div>
+    </article>
+
+    <article>
+        <header>Travel Time Distributions (by Route and Direction)</header>
+        <div id="vis-distributions" style="width: 100%;"></div>
+    </article>
+
+    <article>
+        <header>Travel Time vs. Head Wind</header>
+        <div id="vis-scatter" style="width: 100%;"></div>
     </article>
 
     <script type="text/javascript">
-        var spec = {{ chart_json | safe }};
-        vegaEmbed('#vis', spec, {actions: false});
+        var timelineSpec = {{ timeline_json | safe }};
+        var distributionsSpec = {{ distributions_json | safe }};
+        var scatterSpec = {{ scatter_json | safe }};
+
+        function renderCharts() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+                          (!document.documentElement.getAttribute('data-theme') &&
+                           window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            const currentTheme = isDark ? 'dark' : 'default';
+
+            if (timelineSpec) {
+                vegaEmbed('#vis-timeline', timelineSpec, {
+                    actions: false,
+                    theme: currentTheme
+                });
+            }
+            if (distributionsSpec) {
+                vegaEmbed('#vis-distributions', distributionsSpec, {
+                    actions: false,
+                    theme: currentTheme
+                });
+            }
+            if (scatterSpec) {
+                vegaEmbed('#vis-scatter', scatterSpec, {
+                    actions: false,
+                    theme: currentTheme
+                });
+            }
+        }
+
+        renderCharts();
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderCharts);
+
+        // Listen for PicoCSS theme changes (via data-theme attribute)
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'data-theme') {
+                    renderCharts();
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
     </script>
     {% else %}
     <article>Not enough data to generate insights yet.</article>

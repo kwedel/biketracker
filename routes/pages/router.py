@@ -57,9 +57,15 @@ async def index(
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, auth=Depends(check_auth)):
-    chart_json, stats = get_dashboard_data("bike_rides.db")
+    timeline_json, distributions_json, scatter_json, stats = get_dashboard_data(settings.DB_PATH)
     return templates.TemplateResponse(
         request=request,
         name="pages/dashboard.html",
-        context={"request": request, "chart_json": chart_json, "stats": stats},
+        context={
+            "request": request,
+            "timeline_json": timeline_json,
+            "distributions_json": distributions_json,
+            "scatter_json": scatter_json,
+            "stats": stats,
+        },
     )
